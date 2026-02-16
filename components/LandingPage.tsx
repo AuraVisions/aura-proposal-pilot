@@ -33,9 +33,11 @@ const LandingPage: React.FC = () => {
 
         // If email confirmation is enabled, session will be null
         if (data.user && !data.session) {
-          setSuccessMsg('Account created! Please check your email and confirm your account before logging in.');
+          setSuccessMsg('Your account has been created. Please check your email and verify your address before logging in.');
+          setIsSignUp(false); // Redirect to Sign In
+          setPassword('');   // Clear password for security
         } else if (data.session) {
-          // If auto-confirm is on, App.tsx will catch the session change
+          // If auto-confirm is on, App.tsx will catch the session change via onAuthStateChange
           setSuccessMsg('Welcome aboard! Redirecting...');
         }
       } else {
@@ -60,6 +62,12 @@ const LandingPage: React.FC = () => {
     }
   };
 
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp);
+    setError(null);
+    setSuccessMsg(null);
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans">
       <header className="border-b border-slate-100 bg-white sticky top-0 z-50">
@@ -81,11 +89,7 @@ const LandingPage: React.FC = () => {
               How it Works
             </button>
             <button 
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-                setSuccessMsg(null);
-              }}
+              onClick={toggleMode}
               className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-[0.2em] transition-soft"
             >
               {isSignUp ? 'Login Instead' : 'Create Account'}
@@ -114,82 +118,76 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 <div className="bg-white border border-slate-200 p-8 lg:p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                  {successMsg ? (
-                    <div className="space-y-6 text-center py-4">
-                      <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <h2 className="text-xl font-bold text-slate-900">Confirmation Sent</h2>
-                      <p className="text-sm text-slate-500 leading-relaxed font-medium">{successMsg}</p>
-                      <button 
-                        onClick={() => { setSuccessMsg(null); setIsSignUp(false); }}
-                        className="text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:text-blue-700 transition-soft"
-                      >
-                        Back to Login
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="mb-8">
-                        <h2 className="text-xl font-bold text-slate-900">{isSignUp ? 'Create Hub Account' : 'Operator Login'}</h2>
-                        <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-widest">
-                          {isSignUp ? 'Join the Proposal Ecosystem' : 'Internal Proposal Management'}
+                  <div className="mb-8">
+                    <h2 className="text-xl font-bold text-slate-900">{isSignUp ? 'Create Hub Account' : 'Operator Login'}</h2>
+                    <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-widest">
+                      {isSignUp ? 'Join the Proposal Ecosystem' : 'Internal Proposal Management'}
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleAuth} className="space-y-4">
+                    {/* Inline Success / Instruction Message */}
+                    {successMsg && (
+                      <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-start space-x-3 mb-2">
+                        <div className="mt-0.5 text-emerald-600">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <p className="text-[11px] font-bold text-emerald-700 uppercase leading-tight tracking-wide">
+                          {successMsg}
                         </p>
                       </div>
+                    )}
 
-                      <form onSubmit={handleAuth} className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Email Address</label>
-                          <input 
-                            type="email" 
-                            required
-                            placeholder="name@agency.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium focus:border-blue-500 transition-soft outline-none bg-slate-50/50 focus:bg-white"
-                          />
-                        </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Email Address</label>
+                      <input 
+                        type="email" 
+                        required
+                        placeholder="name@agency.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium focus:border-blue-500 transition-soft outline-none bg-slate-50/50 focus:bg-white"
+                      />
+                    </div>
 
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Security Key</label>
-                          <input 
-                            type="password" 
-                            required
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium focus:border-blue-500 transition-soft outline-none bg-slate-50/50 focus:bg-white"
-                          />
-                        </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Security Key</label>
+                      <input 
+                        type="password" 
+                        required
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium focus:border-blue-500 transition-soft outline-none bg-slate-50/50 focus:bg-white"
+                      />
+                    </div>
 
-                        {error && (
-                          <p className="text-[10px] font-bold text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100 uppercase tracking-widest">
-                            {error}
-                          </p>
-                        )}
-                        
-                        <button 
-                          type="submit"
-                          disabled={loading}
-                          className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-soft shadow-lg active:scale-[0.98] disabled:opacity-50"
-                        >
-                          {loading ? 'Authenticating...' : isSignUp ? 'Initialize Account' : 'Enter Hub'}
-                        </button>
+                    {error && (
+                      <p className="text-[10px] font-bold text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100 uppercase tracking-widest">
+                        {error}
+                      </p>
+                    )}
+                    
+                    <button 
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-soft shadow-lg active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {loading ? 'Authenticating...' : isSignUp ? 'Initialize Account' : 'Enter Hub'}
+                    </button>
 
-                        <div className="text-center mt-6">
-                          <button 
-                            type="button"
-                            onClick={() => { setIsSignUp(!isSignUp); setError(null); }}
-                            className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-[0.3em] transition-soft"
-                          >
-                            {isSignUp ? 'Already have an account? Sign In' : 'New here? Request Access'}
-                          </button>
-                        </div>
-                      </form>
-                    </>
-                  )}
+                    <div className="text-center mt-6">
+                      <button 
+                        type="button"
+                        onClick={toggleMode}
+                        className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-[0.3em] transition-soft"
+                      >
+                        {isSignUp ? 'Already have an account? Sign In' : 'New here? Request Access'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
 
               </div>
