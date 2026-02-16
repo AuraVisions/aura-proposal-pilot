@@ -13,9 +13,8 @@ const App: React.FC = () => {
   const [activeProposalId, setActiveProposalId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Initialize Auth Session & Listen for changes
+  // Handle Authentication Sessions
   useEffect(() => {
-    // Check active session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         handleAuthChange(session.user);
@@ -24,7 +23,6 @@ const App: React.FC = () => {
       }
     });
 
-    // Listen for auth state changes (Sign In, Sign Up, Sign Out)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         handleAuthChange(session.user);
@@ -39,7 +37,6 @@ const App: React.FC = () => {
   }, []);
 
   const handleAuthChange = (supabaseUser: any) => {
-    // Determine role (for this simple logic, we check metadata or defaults)
     const role = supabaseUser.user_metadata?.role || UserRole.AGENCY_ADMIN;
     setAuth({
       user: {
@@ -52,7 +49,7 @@ const App: React.FC = () => {
     setLoading(false);
   };
 
-  // 2. Fetch data when auth changes
+  // Fetch Proposals whenever a user is authenticated
   useEffect(() => {
     if (auth.user) {
       fetchProposals();
@@ -80,8 +77,9 @@ const App: React.FC = () => {
     setProposals([]);
   };
 
+  // Create Item in Supabase
   const createProposal = async () => {
-    const newProposal: Partial<Proposal> = {
+    const newProposal = {
       title: 'New Strategic Proposal',
       clientName: 'New Client',
       status: ProposalStatus.DRAFT,
@@ -104,7 +102,7 @@ const App: React.FC = () => {
         .select();
 
       if (error) throw error;
-      if (data) {
+      if (data && data[0]) {
         setProposals([data[0], ...proposals]);
         setActiveProposalId(data[0].id);
       }
@@ -113,23 +111,42 @@ const App: React.FC = () => {
     }
   };
 
+  // Update Item in Supabase
   const updateProposal = async (updated: Proposal) => {
+    // Optimistic Update
     setProposals(prev => prev.map(p => p.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : p));
+    
     try {
+      // Remove metadata that shouldn't be in the body if present, or just pass the object
       const { error } = await supabase
         .from('proposals')
-        .update({ ...updated, updatedAt: new Date().toISOString() })
+        .update({
+          title: updated.title,
+          clientName: updated.clientName,
+          status: updated.status,
+          phases: updated.phases,
+          logs: updated.logs,
+          updatedAt: new Date().toISOString()
+        })
         .eq('id', updated.id);
+        
       if (error) throw error;
     } catch (err) {
-      console.error("Failed to sync update:", err);
+      console.error("Failed to sync update to Supabase:", err);
+      // Optional: rollback optimistic update on failure
+      fetchProposals();
     }
   };
 
+  // Delete Item from Supabase
   const deleteProposal = async (id: string) => {
     if (window.confirm('Are you sure you want to permanently delete this proposal?')) {
       try {
-        const { error } = await supabase.from('proposals').delete().eq('id', id);
+        const { error } = await supabase
+          .from('proposals')
+          .delete()
+          .eq('id', id);
+          
         if (error) throw error;
         setProposals(prev => prev.filter(p => p.id !== id));
         if (activeProposalId === id) setActiveProposalId(null);

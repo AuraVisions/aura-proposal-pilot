@@ -31,14 +31,12 @@ const LandingPage: React.FC = () => {
         
         if (signUpError) throw signUpError;
 
-        // If email confirmation is enabled, session will be null
+        // REQUIREMENT: If email confirmation is enabled, session will be null. 
+        // Do not redirect. Show instructions and stay on the login screen.
         if (data.user && !data.session) {
-          setSuccessMsg('Your account has been created. Please check your email and verify your address before logging in.');
-          setIsSignUp(false); // Redirect to Sign In
-          setPassword('');   // Clear password for security
-        } else if (data.session) {
-          // If auto-confirm is on, App.tsx will catch the session change via onAuthStateChange
-          setSuccessMsg('Welcome aboard! Redirecting...');
+          setSuccessMsg('Your account has been created. Please check your email and confirm your account before logging in.');
+          setIsSignUp(false); // Switch view to Sign In
+          setPassword('');   // Clear password
         }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -46,6 +44,7 @@ const LandingPage: React.FC = () => {
           password,
         });
         if (signInError) throw signInError;
+        // Successful login will be handled by App.tsx session listener
       }
     } catch (err: any) {
       setError(err.message || 'An authentication error occurred.');
@@ -92,7 +91,7 @@ const LandingPage: React.FC = () => {
               onClick={toggleMode}
               className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-[0.2em] transition-soft"
             >
-              {isSignUp ? 'Login Instead' : 'Create Account'}
+              {isSignUp ? 'Login' : 'Sign Up'}
             </button>
           </div>
         </div>
@@ -119,14 +118,13 @@ const LandingPage: React.FC = () => {
 
                 <div className="bg-white border border-slate-200 p-8 lg:p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                   <div className="mb-8">
-                    <h2 className="text-xl font-bold text-slate-900">{isSignUp ? 'Create Hub Account' : 'Operator Login'}</h2>
+                    <h2 className="text-xl font-bold text-slate-900">{isSignUp ? 'Create Account' : 'Admin Login'}</h2>
                     <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-widest">
                       {isSignUp ? 'Join the Proposal Ecosystem' : 'Internal Proposal Management'}
                     </p>
                   </div>
 
                   <form onSubmit={handleAuth} className="space-y-4">
-                    {/* Inline Success / Instruction Message */}
                     {successMsg && (
                       <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-start space-x-3 mb-2">
                         <div className="mt-0.5 text-emerald-600">
@@ -153,7 +151,7 @@ const LandingPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Security Key</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Password</label>
                       <input 
                         type="password" 
                         required
@@ -175,7 +173,7 @@ const LandingPage: React.FC = () => {
                       disabled={loading}
                       className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-soft shadow-lg active:scale-[0.98] disabled:opacity-50"
                     >
-                      {loading ? 'Authenticating...' : isSignUp ? 'Initialize Account' : 'Enter Hub'}
+                      {loading ? 'Authenticating...' : isSignUp ? 'Initialize Account' : 'Sign In'}
                     </button>
 
                     <div className="text-center mt-6">
