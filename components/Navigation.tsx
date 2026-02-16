@@ -17,7 +17,7 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout, onHome }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </div>
-          <span className="text-sm font-extrabold tracking-tight text-slate-900 uppercase">Proposal Pilot</span>
+          <span className="text-sm font-extrabold tracking-tight text-slate-900 uppercase">Aura Proposal Pilot</span>
         </div>
 
         {user && (

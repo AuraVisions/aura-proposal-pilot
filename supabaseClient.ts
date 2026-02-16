@@ -2,11 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * Supabase Connection Configuration
- * 
- * Replace the values below with your specific Supabase Project credentials.
- * You can find these in your Supabase Project Settings > API.
  */
-const supabaseUrl = 'YOUR_SUPABASE_URL_HERE';
-const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY_HERE';
+const supabaseUrl = 'https://izzpdxepqtetfbiyrbxu.supabase.co';
+const supabaseAnonKey = 'sb_publishable_jrUhMeb7sPKwQtnjUmt2dQ_XEMg-6pr';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -1,4 +1,3 @@
-
 import { Proposal } from '../types';
 import { FIELD_LABELS } from '../constants';
 
@@ -18,7 +17,7 @@ export const downloadProposalPDF = async (proposal: Proposal) => {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('AURA VISIONS PROPOSAL PILOT', margin, 35);
+  doc.text('AURA PROPOSAL PILOT', margin, 35);
   
   doc.setTextColor(50, 50, 50);
   doc.setFontSize(32);
