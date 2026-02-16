@@ -1,0 +1,28 @@
+
+export const FIELD_LABELS: Record<string, string> = {
+  clientName: 'Client Name',
+  businessOverview: 'Business Overview',
+  currentChallenges: 'Current Challenges',
+  goalsObjectives: 'Goals & Objectives',
+  discoveryNotes: 'Discovery Notes',
+  proposedSolution: 'Proposed Digital Transformation Solution',
+  toolsTechnologies: 'Tools & Technologies',
+  automationOpportunities: 'Automation Opportunities',
+  expectedImpact: 'Expected Business Impact',
+  includedServices: 'Included Services',
+  excludedServices: 'Excluded Services',
+  responsibilities: 'Responsibilities (Agency vs Client)',
+  assumptionsConstraints: 'Assumptions & Constraints',
+  projectDuration: 'Project Duration',
+  milestoneBreakdown: 'Milestone Breakdown',
+  deliveryPhases: 'Delivery Phases',
+  dependencies: 'Dependencies',
+  setupFee: 'Setup Fee',
+  monthlyFee: 'Monthly or One-Time Fee',
+  optionalAddOns: 'Optional Add-Ons',
+  paymentTerms: 'Payment Terms',
+  finalSummary: 'Final Summary',
+  legalDisclaimer: 'Legal Disclaimer',
+  approvalStatement: 'Approval Statement',
+  clientConfirmation: 'Client Confirmation'
+};
