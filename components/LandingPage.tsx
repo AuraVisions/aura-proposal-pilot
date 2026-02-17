@@ -6,6 +6,7 @@ type ViewMode = 'SELECTION' | 'ADMIN_LOGIN' | 'ADMIN_SIGNUP' | 'CLIENT_LOGIN' | 
 
 const LandingPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('SELECTION');
+  const [showDropdown, setShowDropdown] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,6 @@ const LandingPage: React.FC = () => {
 
         if (data.user && !data.session) {
           setSuccessMsg('Verification email sent. Please confirm your account before logging in.');
-          // Redirect to login view for that role
           setViewMode(currentRole === UserRole.AGENCY_ADMIN ? 'ADMIN_LOGIN' : 'CLIENT_LOGIN');
           setPassword('');   
         }
@@ -64,6 +64,7 @@ const LandingPage: React.FC = () => {
     setError(null);
     setSuccessMsg(null);
     setViewMode(mode);
+    setShowDropdown(false);
   };
 
   const renderAuthForm = () => {
@@ -85,89 +86,106 @@ const LandingPage: React.FC = () => {
           <span>Return Home</span>
         </button>
 
-        <div className="bg-white border border-slate-200 p-8 lg:p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <div className="mb-8">
-            <h2 className="text-xl font-bold text-slate-900">{title}</h2>
-            <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-widest">
-              {subtitle}
-            </p>
+        <div className="bg-white border border-slate-200 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+          <div className="flex p-1 bg-slate-50 border-b border-slate-100">
+            <button 
+              onClick={() => resetAndNavigate(isSignUpView ? 'ADMIN_SIGNUP' : 'ADMIN_LOGIN')}
+              className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-2xl transition-all ${currentRole === UserRole.AGENCY_ADMIN ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Agency
+            </button>
+            <button 
+              onClick={() => resetAndNavigate(isSignUpView ? 'CLIENT_SIGNUP' : 'CLIENT_LOGIN')}
+              className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-2xl transition-all ${currentRole === UserRole.CLIENT ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Client
+            </button>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-4">
-            {successMsg && (
-              <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-start space-x-3 mb-2">
-                <div className="mt-0.5 text-emerald-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-[11px] font-bold text-emerald-700 uppercase leading-tight tracking-wide">
-                  {successMsg}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Identity (Email)</label>
-              <input 
-                type="email" 
-                required
-                placeholder="name@organization.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium focus:border-blue-500 transition-soft outline-none bg-slate-50/50 focus:bg-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Passphrase</label>
-              <input 
-                type="password" 
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium focus:border-blue-500 transition-soft outline-none bg-slate-50/50 focus:bg-white"
-              />
-            </div>
-
-            {error && (
-              <p className="text-[10px] font-bold text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100 uppercase tracking-widest">
-                {error}
+          <div className="p-8 lg:p-10">
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+              <p className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-widest">
+                {subtitle}
               </p>
-            )}
-            
-            <button 
-              type="submit"
-              disabled={loading}
-              className={`w-full text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-soft shadow-lg active:scale-[0.98] disabled:opacity-50 ${buttonColor}`}
-            >
-              {buttonLabel}
-            </button>
-
-            <div className="text-center mt-6">
-              <button 
-                type="button"
-                onClick={() => {
-                  if (isSignUpView) {
-                    resetAndNavigate(isClient ? 'CLIENT_LOGIN' : 'ADMIN_LOGIN');
-                  } else {
-                    resetAndNavigate(isClient ? 'CLIENT_SIGNUP' : 'ADMIN_SIGNUP');
-                  }
-                }}
-                className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-[0.3em] transition-soft"
-              >
-                {isSignUpView ? 'Existing account? Sign In' : 'Need an account? Register'}
-              </button>
             </div>
-          </form>
+
+            <form onSubmit={handleAuth} className="space-y-4">
+              {successMsg && (
+                <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-start space-x-3 mb-2">
+                  <div className="mt-0.5 text-emerald-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-[11px] font-bold text-emerald-700 uppercase leading-tight tracking-wide">
+                    {successMsg}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Identity (Email)</label>
+                <input 
+                  type="email" 
+                  required
+                  placeholder="name@organization.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium focus:border-blue-500 transition-soft outline-none bg-slate-50/50 focus:bg-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Passphrase</label>
+                <input 
+                  type="password" 
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium focus:border-blue-500 transition-soft outline-none bg-slate-50/50 focus:bg-white"
+                />
+              </div>
+
+              {error && (
+                <p className="text-[10px] font-bold text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100 uppercase tracking-widest">
+                  {error}
+                </p>
+              )}
+              
+              <button 
+                type="submit"
+                disabled={loading}
+                className={`w-full text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-soft shadow-lg active:scale-[0.98] disabled:opacity-50 ${buttonColor}`}
+              >
+                {buttonLabel}
+              </button>
+
+              <div className="text-center mt-6">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    if (isSignUpView) {
+                      resetAndNavigate(isClient ? 'CLIENT_LOGIN' : 'ADMIN_LOGIN');
+                    } else {
+                      resetAndNavigate(isClient ? 'CLIENT_SIGNUP' : 'ADMIN_SIGNUP');
+                    }
+                  }}
+                  className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-[0.3em] transition-soft"
+                >
+                  {isSignUpView ? 'Existing account? Sign In' : 'Need an account? Register'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
+    <div className="min-h-screen bg-white flex flex-col font-sans text-slate-900">
       <header className="border-b border-slate-100 bg-white sticky top-0 z-50">
         <div className="container mx-auto px-6 h-16 flex justify-between items-center">
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => resetAndNavigate('SELECTION')}>
@@ -182,96 +200,85 @@ const LandingPage: React.FC = () => {
           <div className="flex items-center space-x-8">
             <button 
               onClick={() => {
-                const element = document.getElementById('how-it-works');
-                if (element) element.scrollIntoView({ behavior: 'smooth' });
+                if (viewMode !== 'SELECTION') setViewMode('SELECTION');
+                setTimeout(() => {
+                  const element = document.getElementById('how-it-works');
+                  if (element) element.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
               }}
               className="hidden md:block text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-soft"
             >
               How it Works
             </button>
+            
+            <div className="relative">
+              <button 
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="text-[10px] font-bold text-slate-900 hover:text-blue-600 uppercase tracking-[0.2em] transition-soft flex items-center space-x-1.5 group"
+              >
+                <span>Sign In</span>
+                <svg className={`w-3 h-3 transition-transform duration-200 ${showDropdown ? 'rotate-180 text-blue-600' : 'text-slate-400 group-hover:text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {showDropdown && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)}></div>
+                  <div className="absolute right-0 mt-4 w-44 bg-white border border-slate-100 shadow-2xl rounded-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <button 
+                      onClick={() => resetAndNavigate('ADMIN_LOGIN')}
+                      className="w-full text-left px-5 py-4 text-[10px] font-bold text-slate-400 hover:text-slate-900 hover:bg-slate-50 uppercase tracking-widest transition-soft border-b border-slate-50"
+                    >
+                      Agency
+                    </button>
+                    <button 
+                      onClick={() => resetAndNavigate('CLIENT_LOGIN')}
+                      className="w-full text-left px-5 py-4 text-[10px] font-bold text-slate-400 hover:text-slate-900 hover:bg-slate-50 uppercase tracking-widest transition-soft"
+                    >
+                      Client
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <main className="flex-grow flex flex-col bg-white">
-        <section className="flex items-center py-16 lg:py-24 bg-gradient-to-b from-slate-50/50 to-white overflow-hidden">
+        <section className="flex items-center py-20 lg:py-32 bg-gradient-to-b from-slate-50/50 to-white overflow-hidden">
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto">
               
-              {viewMode === 'SELECTION' && (
-                <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-                  <div className="space-y-10">
-                    <div className="space-y-6">
-                      <h1 className="text-5xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight">
-                        <span className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-700 bg-clip-text text-transparent">
-                          The Future of Business Proposals.
-                        </span>
-                      </h1>
-                      <p className="text-lg text-slate-500 leading-relaxed font-medium max-w-md">
-                        The ultimate hub for agencies and enterprise clients to collaborate on high-stakes digital transformation projects.
-                      </p>
-                    </div>
+              {viewMode === 'SELECTION' ? (
+                <div className="max-w-4xl mx-auto text-center space-y-12">
+                  <div className="space-y-6">
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.15] tracking-tight text-slate-900">
+                      <span className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-700 bg-clip-text text-transparent">
+                        The Future of Business Proposals.
+                      </span>
+                    </h1>
+                    <p className="text-lg text-slate-500 leading-relaxed font-medium mx-auto max-w-2xl">
+                      The ultimate hub for agencies and enterprise clients to collaborate on high-stakes digital transformation projects.
+                    </p>
                   </div>
-
-                  <div className="grid gap-8">
-                    {/* Admin Section */}
-                    <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-sm hover:shadow-md transition-soft">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-slate-900 tracking-tight">Agency Administration</h3>
-                          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Internal Command Hub</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <button 
-                          onClick={() => resetAndNavigate('ADMIN_LOGIN')}
-                          className="bg-slate-900 text-white py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-soft active:scale-[0.98]"
-                        >
-                          Admin Login
-                        </button>
-                        <button 
-                          onClick={() => resetAndNavigate('ADMIN_SIGNUP')}
-                          className="bg-white border border-slate-200 text-slate-900 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:border-slate-900 transition-soft active:scale-[0.98]"
-                        >
-                          Admin Sign Up
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Client Section */}
-                    <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-sm hover:shadow-md transition-soft">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-slate-900 tracking-tight">Enterprise Client Portal</h3>
-                          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Secure Client Gateway</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <button 
-                          onClick={() => resetAndNavigate('CLIENT_LOGIN')}
-                          className="bg-blue-600 text-white py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-soft active:scale-[0.98]"
-                        >
-                          Client Login
-                        </button>
-                        <button 
-                          onClick={() => resetAndNavigate('CLIENT_SIGNUP')}
-                          className="bg-white border border-slate-200 text-blue-600 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:border-blue-600 transition-soft active:scale-[0.98]"
-                        >
-                          Client Sign Up
-                        </button>
-                      </div>
-                    </div>
+                  
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <button 
+                      onClick={() => resetAndNavigate('ADMIN_LOGIN')}
+                      className="w-full sm:w-auto bg-slate-900 text-white px-10 py-5 rounded-2xl font-bold text-xs uppercase tracking-[0.2em] hover:bg-slate-800 transition-all active:scale-[0.98] shadow-2xl shadow-slate-200"
+                    >
+                      Agency Login
+                    </button>
+                    <button 
+                      onClick={() => resetAndNavigate('CLIENT_LOGIN')}
+                      className="w-full sm:w-auto bg-blue-600 text-white px-10 py-5 rounded-2xl font-bold text-xs uppercase tracking-[0.2em] hover:bg-blue-700 transition-all active:scale-[0.98] shadow-2xl shadow-blue-100"
+                    >
+                      Client Portal
+                    </button>
                   </div>
                 </div>
+              ) : (
+                renderAuthForm()
               )}
-
-              {viewMode !== 'SELECTION' && renderAuthForm()}
 
             </div>
           </div>
@@ -289,20 +296,20 @@ const LandingPage: React.FC = () => {
                 {[
                   {
                     step: "01",
-                    title: "Blueprint Creation",
-                    desc: "Operators initialize a new proposal project, selecting from pre-defined enterprise phases.",
+                    title: "Draft Your Proposal",
+                    desc: "As an admin, you can create new projects and build out detailed proposal phases. The app automatically structures your workflow from discovery to final agreement.",
                     icon: <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   },
                   {
                     step: "02",
-                    title: "AI-Augmented Drafting",
-                    desc: "Use built-in Gemini intelligence to generate high-quality strategic content for specific phases.",
+                    title: "AI-Powered Content",
+                    desc: "Save time by using our built-in Gemini AI to generate professional text for each section. Simply provide a few notes and let the app refine your strategy into clear, expert content.",
                     icon: <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                   },
                   {
                     step: "03",
-                    title: "Collaborative Approval",
-                    desc: "Clients log in to their private portal to review, provide feedback, or formally approve each phase.",
+                    title: "Collaborate & Approve",
+                    desc: "Send your draft to the client via their private portal. Clients can log in to review each phase, provide feedback, and give formal digital approval once they are satisfied.",
                     icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   }
                 ].map((item, i) => (
@@ -330,11 +337,6 @@ const LandingPage: React.FC = () => {
       <footer className="py-8 border-t border-slate-100 bg-white">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aura Proposal Pilot &copy; 2025</p>
-          <div className="flex space-x-6">
-            <button onClick={() => resetAndNavigate('SELECTION')} className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest">Home</button>
-            <button onClick={() => resetAndNavigate('ADMIN_LOGIN')} className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest">Admin Access</button>
-            <button onClick={() => resetAndNavigate('CLIENT_LOGIN')} className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest">Client Portal</button>
-          </div>
         </div>
       </footer>
     </div>
