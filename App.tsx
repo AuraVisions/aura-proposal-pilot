@@ -13,20 +13,24 @@ const App: React.FC = () => {
   const [activeProposalId, setActiveProposalId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Handle Authentication Sessions
+  // Handle Authentication Sessions - Requirement: Protect private pages with getSession()
   useEffect(() => {
+    // Initial check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         handleAuthChange(session.user);
       } else {
+        setAuth({ user: null });
         setLoading(false);
       }
     });
 
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         handleAuthChange(session.user);
       } else {
+        // Requirement: Only redirect when a real session exists
         setAuth({ user: null });
         setProposals([]);
         setLoading(false);
@@ -113,11 +117,9 @@ const App: React.FC = () => {
 
   // Update Item in Supabase
   const updateProposal = async (updated: Proposal) => {
-    // Optimistic Update
     setProposals(prev => prev.map(p => p.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : p));
     
     try {
-      // Remove metadata that shouldn't be in the body if present, or just pass the object
       const { error } = await supabase
         .from('proposals')
         .update({
@@ -133,7 +135,6 @@ const App: React.FC = () => {
       if (error) throw error;
     } catch (err) {
       console.error("Failed to sync update to Supabase:", err);
-      // Optional: rollback optimistic update on failure
       fetchProposals();
     }
   };
@@ -164,6 +165,7 @@ const App: React.FC = () => {
     );
   }
 
+  // Requirement: Protection - if no auth user (no session), only show LandingPage
   if (!auth.user) {
     return <LandingPage />;
   }
