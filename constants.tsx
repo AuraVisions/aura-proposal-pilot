@@ -1,6 +1,8 @@
 
 export const FIELD_LABELS: Record<string, string> = {
   clientName: 'Client Name',
+  clientEmail: 'Client Email',
+  companyName: 'Company Name',
   businessOverview: 'Business Overview',
   currentChallenges: 'Current Challenges',
   goalsObjectives: 'Goals & Objectives',

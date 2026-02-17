@@ -43,6 +43,7 @@ export interface Proposal {
   id: string;
   title: string;
   clientName: string;
+  client_email: string;
   status: ProposalStatus;
   phases: Phase[];
   createdAt: string;
@@ -53,6 +54,7 @@ export interface Proposal {
 export interface AuthState {
   user: {
     id: string;
+    email: string;
     name: string;
     role: UserRole;
     clientId?: string;

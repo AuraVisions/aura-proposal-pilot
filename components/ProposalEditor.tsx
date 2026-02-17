@@ -39,7 +39,18 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
       ...activePhase,
       fields: { ...activePhase.fields, [key]: value }
     };
-    onUpdate({ ...proposal, phases: updatedPhases });
+
+    let updatedProposal = { 
+      ...proposal, 
+      phases: updatedPhases 
+    };
+
+    // Requirement: Sync clientEmail from Phase 1 fields to the top-level client_email column
+    if (key === 'clientEmail' && activePhaseIndex === 0) {
+      updatedProposal.client_email = value;
+    }
+
+    onUpdate(updatedProposal);
   };
 
   const logManualUpdate = (key: string) => {
@@ -158,15 +169,13 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
                           : 'bg-transparent text-slate-300 cursor-not-allowed opacity-50'
                     }`}
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
-                        phase.status === PhaseStatus.APPROVED ? 'bg-emerald-500 text-white' : 
+                    <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
+                      phase.status === PhaseStatus.APPROVED ? 'bg-emerald-500 text-white' : 
                         isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'
-                      }`}>
-                        {idx + 1}
-                      </div>
-                      <span className="text-xs tracking-tight">{phase.title.split(': ')[1]}</span>
+                    }`}>
+                      {idx + 1}
                     </div>
+                    <span className="text-xs tracking-tight">{phase.title.split(': ')[1]}</span>
                   </button>
                 );
               })}
@@ -191,7 +200,7 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                       {FIELD_LABELS[fieldKey]}
                     </label>
-                    {isEditable && (
+                    {isEditable && fieldKey !== 'clientEmail' && (
                       <button 
                         onClick={() => handleMagicFill(fieldKey)}
                         className="flex items-center space-x-1.5 text-blue-600 hover:text-blue-800 transition-soft"
@@ -208,7 +217,7 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
                       onChange={(e) => handleFieldChange(fieldKey, e.target.value)}
                       onBlur={() => logManualUpdate(fieldKey)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-5 text-slate-800 text-sm focus:bg-white focus:border-blue-400 transition-soft min-h-[160px] leading-relaxed font-medium"
-                      placeholder="Enter strategic content details here..."
+                      placeholder={fieldKey === 'clientEmail' ? "Enter the client's login email address..." : "Enter strategic content details here..."}
                     />
                   ) : (
                     <div className="w-full bg-slate-50/50 border border-slate-200 rounded-xl p-6 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-medium">

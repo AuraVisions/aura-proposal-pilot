@@ -13,9 +13,8 @@ const App: React.FC = () => {
   const [activeProposalId, setActiveProposalId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Handle Authentication Sessions - Requirement: Protect private pages with getSession()
+  // Handle Authentication Sessions
   useEffect(() => {
-    // Initial check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         handleAuthChange(session.user);
@@ -25,12 +24,10 @@ const App: React.FC = () => {
       }
     });
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         handleAuthChange(session.user);
       } else {
-        // Requirement: Only redirect when a real session exists
         setAuth({ user: null });
         setProposals([]);
         setLoading(false);
@@ -45,6 +42,7 @@ const App: React.FC = () => {
     setAuth({
       user: {
         id: supabaseUser.id,
+        email: supabaseUser.email || '',
         name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
         role: role as UserRole,
         clientId: role === UserRole.CLIENT ? 'client-default' : undefined
@@ -53,7 +51,7 @@ const App: React.FC = () => {
     setLoading(false);
   };
 
-  // Fetch Proposals whenever a user is authenticated
+  // Fetch Proposals for the authenticated user
   useEffect(() => {
     if (auth.user) {
       fetchProposals();
@@ -62,10 +60,14 @@ const App: React.FC = () => {
 
   const fetchProposals = async () => {
     try {
-      const { data, error } = await supabase
-        .from('proposals')
-        .select('*')
-        .order('updatedAt', { ascending: false });
+      let query = supabase.from('proposals').select('*');
+      
+      // Filter for clients based on their login email
+      if (auth.user?.role === UserRole.CLIENT && auth.user.email) {
+        query = query.eq('client_email', auth.user.email);
+      }
+
+      const { data, error } = await query.order('updatedAt', { ascending: false });
 
       if (error) throw error;
       if (data) setProposals(data);
@@ -81,17 +83,32 @@ const App: React.FC = () => {
     setProposals([]);
   };
 
-  // Create Item in Supabase
-  const createProposal = async () => {
+  // Create Proposal in Supabase linked to auth.user.id and client email
+  const createProposal = async (title: string, clientName: string, clientEmail: string) => {
+    if (!auth.user) return;
+
     const newProposal = {
-      title: 'New Strategic Proposal',
-      clientName: 'New Client',
+      user_id: auth.user.id,
+      title: title || 'New Strategic Proposal',
+      clientName: clientName || 'New Client',
+      client_email: clientEmail || '',
       status: ProposalStatus.DRAFT,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       logs: [],
       phases: [
-        { id: 1, title: 'Phase 1: Discovery & Strategy', status: PhaseStatus.DRAFT, fields: { businessOverview: '', currentChallenges: '' }, logs: [] },
+        { 
+          id: 1, 
+          title: 'Phase 1: Discovery & Strategy', 
+          status: PhaseStatus.DRAFT, 
+          fields: { 
+            companyName: '',
+            clientEmail: clientEmail || '', // Initialized with value from creation modal
+            businessOverview: '', 
+            currentChallenges: '' 
+          }, 
+          logs: [] 
+        },
         { id: 2, title: 'Phase 2: Solution Architecture', status: PhaseStatus.DRAFT, fields: { proposedSolution: '', toolsTechnologies: '' }, logs: [] },
         { id: 3, title: 'Phase 3: Scope & Execution', status: PhaseStatus.DRAFT, fields: { projectDuration: '', milestoneBreakdown: '' }, logs: [] },
         { id: 4, title: 'Phase 4: Financial Investment', status: PhaseStatus.DRAFT, fields: { setupFee: '', monthlyFee: '' }, logs: [] },
@@ -115,8 +132,9 @@ const App: React.FC = () => {
     }
   };
 
-  // Update Item in Supabase
+  // Update Proposal in Supabase
   const updateProposal = async (updated: Proposal) => {
+    // Optimistic update
     setProposals(prev => prev.map(p => p.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : p));
     
     try {
@@ -125,6 +143,7 @@ const App: React.FC = () => {
         .update({
           title: updated.title,
           clientName: updated.clientName,
+          client_email: updated.client_email,
           status: updated.status,
           phases: updated.phases,
           logs: updated.logs,
@@ -139,7 +158,7 @@ const App: React.FC = () => {
     }
   };
 
-  // Delete Item from Supabase
+  // Delete Proposal from Supabase
   const deleteProposal = async (id: string) => {
     if (window.confirm('Are you sure you want to permanently delete this proposal?')) {
       try {
@@ -165,7 +184,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Requirement: Protection - if no auth user (no session), only show LandingPage
   if (!auth.user) {
     return <LandingPage />;
   }

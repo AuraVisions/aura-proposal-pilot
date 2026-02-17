@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Proposal, UserRole, ProposalStatus } from '../types.ts';
 
 interface DashboardProps {
   proposals: Proposal[];
   role: UserRole;
-  onCreate: () => void;
+  onCreate: (title: string, clientName: string, clientEmail: string) => void;
   onView: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ proposals, role, onCreate, onView, onDelete }) => {
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({ title: '', clientName: '', clientEmail: '' });
+
   const getStatusBadge = (status: ProposalStatus) => {
     const baseClasses = "px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border";
     switch (status) {
@@ -19,6 +22,13 @@ const Dashboard: React.FC<DashboardProps> = ({ proposals, role, onCreate, onView
       case ProposalStatus.REJECTED: return `${baseClasses} bg-rose-50 text-rose-600 border-rose-200`;
       case ProposalStatus.COMPLETED: return `${baseClasses} bg-slate-900 text-white border-slate-900`;
     }
+  };
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onCreate(formData.title, formData.clientName, formData.clientEmail);
+    setIsCreating(false);
+    setFormData({ title: '', clientName: '', clientEmail: '' });
   };
 
   return (
@@ -33,7 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ proposals, role, onCreate, onView
         
         {role === UserRole.AGENCY_ADMIN && (
           <button 
-            onClick={onCreate}
+            onClick={() => setIsCreating(true)}
             className="w-full md:w-auto bg-slate-900 text-white px-6 py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-soft flex items-center justify-center space-x-2"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
@@ -62,9 +72,11 @@ const Dashboard: React.FC<DashboardProps> = ({ proposals, role, onCreate, onView
                   <h3 className="text-lg font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-soft">{proposal.title}</h3>
                   {getStatusBadge(proposal.status)}
                 </div>
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-wrap items-center gap-y-2 gap-x-4">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Client: {proposal.clientName}</span>
-                  <div className="h-1 w-1 bg-slate-200 rounded-full"></div>
+                  <div className="hidden sm:block h-1 w-1 bg-slate-200 rounded-full"></div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact: {proposal.client_email || 'No email set'}</span>
+                  <div className="hidden sm:block h-1 w-1 bg-slate-200 rounded-full"></div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Updated {new Date(proposal.updatedAt).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -87,6 +99,72 @@ const Dashboard: React.FC<DashboardProps> = ({ proposals, role, onCreate, onView
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* New Proposal Modal */}
+      {isCreating && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Initialize New Project</h3>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-6">Setup Enterprise Workflow</p>
+            
+            <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Project Title</label>
+                <input 
+                  autoFocus
+                  required
+                  type="text" 
+                  value={formData.title}
+                  onChange={e => setFormData({...formData, title: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white transition-soft"
+                  placeholder="e.g. Q3 Digital Transformation"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Client Name</label>
+                <input 
+                  required
+                  type="text" 
+                  value={formData.clientName}
+                  onChange={e => setFormData({...formData, clientName: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white transition-soft"
+                  placeholder="e.g. Acme Corp"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Client Ownership Email</label>
+                <input 
+                  required
+                  type="email" 
+                  value={formData.clientEmail}
+                  onChange={e => setFormData({...formData, clientEmail: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white transition-soft"
+                  placeholder="client@organization.com"
+                />
+                <p className="text-[9px] text-slate-400 font-medium px-1">Used for portal access verification.</p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsCreating(false)}
+                  className="flex-1 py-3.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-soft"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-3.5 bg-slate-900 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-soft shadow-lg active:scale-95"
+                >
+                  Create Proposal
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
