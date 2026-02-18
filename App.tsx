@@ -103,7 +103,7 @@ const App: React.FC = () => {
           status: PhaseStatus.DRAFT, 
           fields: { 
             companyName: '',
-            clientEmail: clientEmail || '', // Initialized with value from creation modal
+            clientEmail: clientEmail || '',
             businessOverview: '', 
             currentChallenges: '' 
           }, 
@@ -125,7 +125,7 @@ const App: React.FC = () => {
       if (error) throw error;
       if (data && data[0]) {
         setProposals([data[0], ...proposals]);
-        setActiveProposalId(data[0].id);
+        setActiveProposalId(String(data[0].id));
       }
     } catch (err) {
       console.error("Failed to create proposal:", err);
@@ -134,8 +134,8 @@ const App: React.FC = () => {
 
   // Update Proposal in Supabase
   const updateProposal = async (updated: Proposal) => {
-    // Optimistic update
-    setProposals(prev => prev.map(p => p.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : p));
+    const updatedId = String(updated.id);
+    setProposals(prev => prev.map(p => String(p.id) === updatedId ? { ...updated, updatedAt: new Date().toISOString() } : p));
     
     try {
       const { error } = await supabase
@@ -159,7 +159,8 @@ const App: React.FC = () => {
   };
 
   // Delete Proposal from Supabase
-  const deleteProposal = async (id: string) => {
+  const deleteProposal = async (id: string | number) => {
+    const targetId = String(id);
     if (window.confirm('Are you sure you want to permanently delete this proposal?')) {
       try {
         const { error } = await supabase
@@ -168,10 +169,16 @@ const App: React.FC = () => {
           .eq('id', id);
           
         if (error) throw error;
-        setProposals(prev => prev.filter(p => p.id !== id));
-        if (activeProposalId === id) setActiveProposalId(null);
+        
+        // Remove from state immediately for a clean UI experience
+        setProposals(prev => prev.filter(p => String(p.id) !== targetId));
+        
+        // If we are currently viewing the proposal being deleted, go back to dashboard
+        setActiveProposalId(prev => String(prev) === targetId ? null : prev);
+        
       } catch (err) {
         console.error("Failed to delete proposal:", err);
+        alert("Deletion failed. This project may be locked or you might not have the necessary permissions.");
       }
     }
   };
@@ -188,7 +195,8 @@ const App: React.FC = () => {
     return <LandingPage />;
   }
 
-  const activeProposal = proposals.find(p => p.id === activeProposalId);
+  // Robust lookup using string conversion for IDs
+  const activeProposal = proposals.find(p => String(p.id) === String(activeProposalId));
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -204,7 +212,7 @@ const App: React.FC = () => {
             proposals={proposals}
             role={auth.user.role}
             onCreate={createProposal}
-            onView={(id) => setActiveProposalId(id)}
+            onView={(id) => setActiveProposalId(String(id))}
             onDelete={deleteProposal}
           />
         ) : activeProposal ? (

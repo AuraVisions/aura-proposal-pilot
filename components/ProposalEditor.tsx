@@ -19,9 +19,20 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
   const activePhase = proposal.phases[activePhaseIndex];
   const isEditable = activePhase.status === PhaseStatus.DRAFT || activePhase.status === PhaseStatus.REJECTED;
 
+  // Validation: Check if all fields in the current phase have content
+  const allFieldsFilled = Object.values(activePhase.fields).every(
+    (val) => typeof val === 'string' && val.trim() !== ''
+  );
+
+  // Gating Logic: Phase 1 is always submission-ready. Others require previous phase to be APPROVED.
+  const isPrevApproved = activePhaseIndex === 0 || proposal.phases[activePhaseIndex - 1].status === PhaseStatus.APPROVED;
+
+  // Access Logic for Sidebar (Sequential access)
   const isAccessible = (index: number) => {
     if (index === 0) return true;
-    return proposal.phases[index - 1].status === PhaseStatus.APPROVED;
+    // For agencies, allow accessing any phase that is NOT in DRAFT (i.e., previously interacted with) 
+    // OR if the previous one is approved.
+    return proposal.phases[index - 1].status === PhaseStatus.APPROVED || proposal.phases[index].status !== PhaseStatus.DRAFT;
   };
 
   const createLog = (action: AuditLog['action'], details: string): AuditLog => ({
@@ -45,7 +56,6 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
       phases: updatedPhases 
     };
 
-    // Requirement: Sync clientEmail from Phase 1 fields to the top-level client_email column
     if (key === 'clientEmail' && activePhaseIndex === 0) {
       updatedProposal.client_email = value;
     }
@@ -72,6 +82,8 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
   };
 
   const submitForReview = () => {
+    if (!allFieldsFilled || !isPrevApproved) return;
+
     setIsSaving(true);
     const log = createLog('SUBMIT', `Submitted phase ${activePhase.id}`);
     const updatedPhases = [...proposal.phases];
@@ -112,7 +124,6 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
 
   return (
     <div className="max-w-7xl mx-auto py-8 space-y-8 font-sans px-4">
-      {/* Editor Header */}
       <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-1 flex-grow w-full">
           <input 
@@ -133,7 +144,7 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
           {proposal.status === ProposalStatus.COMPLETED && (
             <button 
               onClick={() => downloadProposalPDF(proposal)}
-              className="bg-slate-900 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-soft"
+              className="bg-slate-900 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-soft shadow-lg"
             >
               Export PDF
             </button>
@@ -148,7 +159,6 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Navigation Sidebar */}
         <div className="lg:col-span-3">
           <div className="sticky top-24 space-y-4">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">Project Phases</h4>
@@ -183,17 +193,33 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
           </div>
         </div>
 
-        {/* Editor Main */}
         <div className="lg:col-span-6 space-y-6">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">{activePhase.title}</h3>
-              <div className="px-3 py-1 bg-white border border-slate-200 rounded text-[9px] font-bold uppercase tracking-widest text-slate-500">
+              <div className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest border ${
+                activePhase.status === PhaseStatus.APPROVED ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                activePhase.status === PhaseStatus.SUBMITTED ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                activePhase.status === PhaseStatus.REJECTED ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                'bg-slate-50 text-slate-400 border-slate-200'
+              }`}>
                 {activePhase.status}
               </div>
             </div>
 
             <div className="p-8 space-y-10">
+              {activePhase.status === PhaseStatus.REJECTED && activePhase.feedback && (
+                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <svg className="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em]">Client Requested Changes</span>
+                  </div>
+                  <p className="text-sm text-rose-900 font-medium leading-relaxed">{activePhase.feedback}</p>
+                </div>
+              )}
+
               {Object.keys(activePhase.fields).map((fieldKey) => (
                 <div key={fieldKey} className="space-y-3">
                   <div className="flex justify-between items-center">
@@ -228,35 +254,62 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
               ))}
             </div>
 
-            <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-               <button 
-                onClick={() => setActivePhaseIndex(Math.max(0, activePhaseIndex - 1))}
-                disabled={activePhaseIndex === 0}
-                className="text-[10px] font-bold uppercase tracking-widest text-slate-400 disabled:opacity-30 hover:text-slate-900 transition-soft"
-              >
-                Previous Phase
-              </button>
-              {isEditable && (
+            <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col gap-6">
+              <div className="flex justify-between items-center w-full">
                 <button 
-                  onClick={submitForReview}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-soft shadow-md"
+                  onClick={() => setActivePhaseIndex(Math.max(0, activePhaseIndex - 1))}
+                  disabled={activePhaseIndex === 0}
+                  className="text-[10px] font-bold uppercase tracking-widest text-slate-400 disabled:opacity-30 hover:text-slate-900 transition-soft"
                 >
-                  Send for Client Review
+                  Previous Phase
                 </button>
-              )}
-              {activePhaseIndex < proposal.phases.length - 1 && !isEditable && (
-                 <button 
-                  onClick={() => setActivePhaseIndex(activePhaseIndex + 1)}
-                  className="bg-slate-900 text-white px-8 py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-soft"
-                >
-                  Next Phase
-                </button>
-              )}
+                
+                {isEditable && (
+                  <div className="flex flex-col items-center gap-2">
+                    {!isPrevApproved && (
+                      <div className="flex items-center space-x-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100 shadow-sm">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        <p className="text-[9px] font-bold uppercase tracking-widest">
+                          Locked: Await Phase {activePhaseIndex} Client Approval
+                        </p>
+                      </div>
+                    )}
+                    {isPrevApproved && !allFieldsFilled && (
+                      <div className="flex items-center space-x-2 text-slate-400 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p className="text-[9px] font-bold uppercase tracking-widest">
+                          Validation: Complete all fields to submit
+                        </p>
+                      </div>
+                    )}
+                    
+                    <button 
+                      onClick={submitForReview}
+                      disabled={!allFieldsFilled || !isPrevApproved}
+                      className={`px-10 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 ${
+                        (allFieldsFilled && isPrevApproved)
+                          ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100' 
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Send for Client Review
+                    </button>
+                  </div>
+                )}
+
+                {activePhaseIndex < proposal.phases.length - 1 && (
+                  <button 
+                    onClick={() => setActivePhaseIndex(activePhaseIndex + 1)}
+                    className="bg-slate-900 text-white px-8 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-soft active:scale-95 shadow-md"
+                  >
+                    Next Phase
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Activity Sidebar */}
         <div className="lg:col-span-3">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sticky top-24">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center space-x-2">

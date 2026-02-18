@@ -6,7 +6,7 @@ interface DashboardProps {
   role: UserRole;
   onCreate: (title: string, clientName: string, clientEmail: string) => void;
   onView: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string | number) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ proposals, role, onCreate, onView, onDelete }) => {
@@ -90,8 +90,13 @@ const Dashboard: React.FC<DashboardProps> = ({ proposals, role, onCreate, onView
                 </button>
                 {role === UserRole.AGENCY_ADMIN && (
                   <button 
-                    onClick={() => onDelete(proposal.id)}
-                    className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-soft"
+                    type="button"
+                    title="Delete Proposal"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(proposal.id);
+                    }}
+                    className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-soft shrink-0"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
