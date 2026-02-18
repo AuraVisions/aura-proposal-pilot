@@ -27,14 +27,11 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
   // Gating Logic: Phase 1 is always submission-ready. Others require previous phase to be APPROVED.
   const isPrevApproved = activePhaseIndex === 0 || proposal.phases[activePhaseIndex - 1].status === PhaseStatus.APPROVED;
 
-  // Access Logic for Sidebar (Sequential access)
-  const isAccessible = (index: number) => {
-    if (index === 0) return true;
-    // For agencies, allow accessing any phase that is NOT in DRAFT (i.e., previously interacted with) 
-    // OR if the previous one is approved.
-    return proposal.phases[index - 1].status === PhaseStatus.APPROVED || proposal.phases[index].status !== PhaseStatus.DRAFT;
-  };
-
+   const isAccessible = (index: number) => {
+     if (index === 0) return true;
+     // Agency can only access a phase if the previous phase has been APPROVED
+     return proposal.phases[index - 1].status === PhaseStatus.APPROVED;
+   };
   const createLog = (action: AuditLog['action'], details: string): AuditLog => ({
     id: Math.random().toString(36).substr(2, 9),
     userId: currentUser.id,
