@@ -38,7 +38,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleAuthChange = (supabaseUser: any) => {
-    const role = supabaseUser.user_metadata?.role || UserRole.AGENCY_ADMIN;
+    const role = supabaseUser.user_metadata?.role || UserRole.CLIENT;
     setAuth({
       user: {
         id: supabaseUser.id,

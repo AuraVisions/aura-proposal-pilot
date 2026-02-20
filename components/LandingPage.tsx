@@ -203,21 +203,24 @@ const LandingPage: React.FC = () => {
                   {buttonLabel}
                 </button>
 
-                <div className="text-center mt-6">
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      if (isSignUpView) {
-                        resetAndNavigate(isClient ? 'CLIENT_LOGIN' : 'ADMIN_LOGIN');
-                      } else {
-                        resetAndNavigate(isClient ? 'CLIENT_SIGNUP' : 'ADMIN_SIGNUP');
-                      }
-                    }}
-                    className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-[0.3em] transition-soft"
-                  >
-                    {isSignUpView ? 'Existing account? Sign In' : 'Need an account? Register'}
-                  </button>
-                </div>
+                {currentRole === UserRole.CLIENT && (
+                  <div className="text-center mt-6">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        if (isSignUpView) {
+                          resetAndNavigate('CLIENT_LOGIN');
+                        } else {
+                          resetAndNavigate('CLIENT_SIGNUP');
+                        }
+                      }}
+                      className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-[0.3em] transition-soft"
+                    >
+                      {isSignUpView ? 'Existing account? Sign In' : 'Need an account? Register'}
+                    </button>
+                  </div>
+                )}
+
               </form>
             </div>
           </div>
