@@ -15,6 +15,7 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
   const [activePhaseIndex, setActivePhaseIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [sequentialMode, setSequentialMode] = useState(true);
 
   const activePhase = proposal.phases[activePhaseIndex];
   const isEditable = activePhase.status === PhaseStatus.DRAFT || activePhase.status === PhaseStatus.REJECTED;
@@ -24,10 +25,11 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
     (val) => typeof val === 'string' && val.trim() !== ''
   );
 
-  // Gating Logic: Phase 1 is always submission-ready. Others require previous phase to be APPROVED.
-  const isPrevApproved = activePhaseIndex === 0 || proposal.phases[activePhaseIndex - 1].status === PhaseStatus.APPROVED;
+  // Gating Logic: Phase 1 is always submission-ready. Others require previous phase to be APPROVED if sequentialMode is true.
+  const isPrevApproved = !sequentialMode || activePhaseIndex === 0 || proposal.phases[activePhaseIndex - 1].status === PhaseStatus.APPROVED;
 
    const isAccessible = (index: number) => {
+     if (!sequentialMode) return true;
      if (index === 0) return true;
      // Agency can only access a phase if the previous phase has been APPROVED
      return proposal.phases[index - 1].status === PhaseStatus.APPROVED;
@@ -135,6 +137,23 @@ const ProposalEditor: React.FC<ProposalEditorProps> = ({ proposal, onUpdate, onC
             <span className="text-slate-900">{proposal.clientName}</span>
             <div className="h-1 w-1 bg-slate-200 rounded-full"></div>
             {isSaving ? <span className="text-blue-500 animate-pulse">Syncing...</span> : <span className="text-emerald-500">All Changes Saved</span>}
+            
+            <div className="flex items-center space-x-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 ml-4">
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Sequential Mode</span>
+              <button
+                type="button"
+                onClick={() => setSequentialMode(!sequentialMode)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                  sequentialMode ? 'bg-blue-600' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                    sequentialMode ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         </div>
         <div className="flex items-center space-x-3 shrink-0">
